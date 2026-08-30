@@ -1,5 +1,16 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import {
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    TextField,
+    Button,
+    MenuItem,
+    Box,
+    CircularProgress,
+} from "@mui/material";
 
 import { createEmployee } from "../api/employeeApi";
 import { getAreas } from "../api/areaApi";
@@ -14,10 +25,7 @@ interface AddEmployeeModalProps {
     onSuccess: () => void;
 }
 
-export default function AddEmployeeModal({
-    onClose,
-    onSuccess,
-}: AddEmployeeModalProps) {
+export default function AddEmployeeModal({ onClose, onSuccess }: AddEmployeeModalProps) {
     const [areas, setAreas] = useState<Area[]>([]);
     const [positions, setPositions] = useState<Position[]>([]);
     const [loadingOptions, setLoadingOptions] = useState(true);
@@ -40,13 +48,8 @@ export default function AddEmployeeModal({
                 getPositions(),
             ]);
 
-            if (areasResponse.success) {
-                setAreas(areasResponse.data);
-            }
-
-            if (positionsResponse.success) {
-                setPositions(positionsResponse.data);
-            }
+            if (areasResponse.success) setAreas(areasResponse.data);
+            if (positionsResponse.success) setPositions(positionsResponse.data);
         } catch (error) {
             console.error("Error loading options:", error);
         } finally {
@@ -62,7 +65,6 @@ export default function AddEmployeeModal({
             };
 
             await createEmployee(employee);
-
             reset();
             onSuccess();
         } catch (error) {
@@ -71,145 +73,120 @@ export default function AddEmployeeModal({
     }
 
     return (
-        <div className="modal-overlay">
-            <div className="modal">
-                <h2>Agregar empleado</h2>
+        <Dialog open={true} onClose={onClose} fullWidth maxWidth="sm">
+            <DialogTitle sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                Agregar Empleado
+            </DialogTitle>
 
-                {loadingOptions ? (
-                    <p>Cargando información...</p>
-                ) : (
-                    <form onSubmit={handleSubmit(onSubmit)}>
+            {loadingOptions ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                    <CircularProgress />
+                </Box>
+            ) : (
+                <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
+                    <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <TextField
+                            label="Cédula"
+                            fullWidth
+                            {...register("identityDocument", { required: "La cédula es requerida" })}
+                            error={!!errors.identityDocument}
+                            helperText={errors.identityDocument?.message}
+                        />
 
-                        <div>
-                            <label>Cédula</label>
-                            <input
-                                {...register("identityDocument", {
-                                    required: "La cédula es requerida",
-                                })}
-                            />
-                            {errors.identityDocument && (
-                                <span>{errors.identityDocument.message}</span>
-                            )}
-                        </div>
+                        <TextField
+                            label="Nombres"
+                            fullWidth
+                            {...register("firstNames", { required: "Los nombres son requeridos" })}
+                            error={!!errors.firstNames}
+                            helperText={errors.firstNames?.message}
+                        />
 
-                        <div>
-                            <label>Nombres</label>
-                            <input
-                                {...register("firstNames", {
-                                    required: "Los nombres son requeridos",
-                                })}
-                            />
+                        <TextField
+                            label="Apellidos"
+                            fullWidth
+                            {...register("lastNames", { required: "Los apellidos son requeridos" })}
+                            error={!!errors.lastNames}
+                            helperText={errors.lastNames?.message}
+                        />
 
-                            {errors.firstNames && (
-                                <span>
-                                    {errors.firstNames.message}
-                                </span>
-                            )}
-                        </div>
-
-                        <div>
-                            <label>Apellidos</label>
-                            <input
-                                {...register("lastNames", {
-                                    required: "Los apellidos son requeridos",
-                                })}
-                            />
-
-                            {errors.lastNames && (
-                                <span>
-                                    {errors.lastNames.message}
-                                </span>
-                            )}
-                        </div>
-
-                        <div>
-                            <label>Edad</label>
-                            <input
+                        <Box sx={{ display: 'flex', gap: 2 }}>
+                            <TextField
+                                label="Edad"
                                 type="number"
-                                {...register("age", {
-                                    required: "La edad es requerida",
-                                    valueAsNumber: true,
+                                fullWidth
+                                {...register("age", { 
+                                    required: "La edad es requerida", 
+                                    valueAsNumber: true 
                                 })}
+                                error={!!errors.age}
+                                helperText={errors.age?.message}
                             />
 
-                            {errors.age && (
-                                <span>{errors.age.message}</span>
-                            )}
-                        </div>
-
-                        <div>
-                            <label>Salario mensual</label>
-                            <input
+                            <TextField
+                                label="Salario mensual"
                                 type="number"
-                                step="0.01"
-                                min="0"
-                                {...register("monthlySalary", {
-                                    required: "El salario es requerido",
-                                    valueAsNumber: true,
+                                fullWidth
+                                slotProps={{ htmlInput: { step: "0.01", min: "0" } }}
+                                {...register("monthlySalary", { 
+                                    required: "El salario es requerido", 
+                                    valueAsNumber: true 
                                 })}
+                                error={!!errors.monthlySalary}
+                                helperText={errors.monthlySalary?.message}
                             />
+                        </Box>
 
-                            {errors.monthlySalary && (
-                                <span>
-                                    {errors.monthlySalary.message}
-                                </span>
-                            )}
-                        </div>
+                        <TextField
+                            select
+                            label="Área"
+                            fullWidth
+                            defaultValue=""
+                            {...register("areaId", { 
+                                required: "El área es requerida", 
+                                valueAsNumber: true 
+                            })}
+                            error={!!errors.areaId}
+                            helperText={errors.areaId?.message}
+                        >
+                            <MenuItem value="" disabled><em>Seleccione un área</em></MenuItem>
+                            {areas.map((area) => (
+                                <MenuItem key={area.id} value={area.id}>
+                                    {area.name}
+                                </MenuItem>
+                            ))}
+                        </TextField>
 
-                        <div>
-                            <label>Área</label>
-                            <select
-                                {...register("areaId", {
-                                    required: "El área es requerida",
-                                    valueAsNumber: true,
-                                })}
-                            >
-                                <option value="">Seleccione un área</option>
+                        <TextField
+                            select
+                            label="Cargo"
+                            fullWidth
+                            defaultValue=""
+                            {...register("positionId", { 
+                                required: "El cargo es requerido", 
+                                valueAsNumber: true 
+                            })}
+                            error={!!errors.positionId}
+                            helperText={errors.positionId?.message}
+                        >
+                            <MenuItem value="" disabled><em>Seleccione un cargo</em></MenuItem>
+                            {positions.map((position) => (
+                                <MenuItem key={position.id} value={position.id}>
+                                    {position.name}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                    </DialogContent>
 
-                                {areas.map((area) => (
-                                    <option key={area.id} value={area.id}>
-                                        {area.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label>Cargo</label>
-                            <select
-                                {...register("positionId", {
-                                    required: "El cargo es requerido",
-                                    valueAsNumber: true,
-                                })}
-                            >
-                                <option value="">Seleccione un cargo</option>
-
-                                {positions.map((position) => (
-                                    <option key={position.id} value={position.id}>
-                                        {position.name}
-                                    </option>
-                                ))}
-                            </select>
-
-                            {errors.positionId && (
-                                <span>{errors.positionId.message}</span>
-                            )}
-                        </div>
-
-                        <div>
-                            <button type="button" onClick={onClose}>
-                                Cancelar
-                            </button>
-
-                            <button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? "Guardando..." : "Guardar"}
-                            </button>
-                        </div>
-
-                    </form>
-                )}
-  
-            </div>
-        </div>
+                    <DialogActions sx={{ p: 2 }}>
+                        <Button onClick={onClose} color="inherit" variant="text">
+                            Cancelar
+                        </Button>
+                        <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
+                            {isSubmitting ? "Guardando..." : "Guardar"}
+                        </Button>
+                    </DialogActions>
+                </Box>
+            )}
+        </Dialog>
     );
 }

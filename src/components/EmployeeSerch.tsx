@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { Box, Paper, TextField, Button, MenuItem } from "@mui/material";
+import { Search as SearchIcon, Clear as ClearIcon } from "@mui/icons-material";
 
 import { getAreas } from "../api/areaApi";
 import { getPositions } from "../api/positionApi";
@@ -21,9 +23,7 @@ interface SearchForm {
     positionId: string;
 }
 
-export default function EmployeeSearch({
-    onSearch,
-}: EmployeeSearchProps) {
+export default function EmployeeSearch({ onSearch }: EmployeeSearchProps) {
     const [areas, setAreas] = useState<Area[]>([]);
     const [positions, setPositions] = useState<Position[]>([]);
 
@@ -40,13 +40,8 @@ export default function EmployeeSearch({
                 getPositions(),
             ]);
 
-            if (areasResponse.success) {
-                setAreas(areasResponse.data);
-            }
-
-            if (positionsResponse.success) {
-                setPositions(positionsResponse.data);
-            }
+            if (areasResponse.success) setAreas(areasResponse.data);
+            if (positionsResponse.success) setPositions(positionsResponse.data);
         } catch (error) {
             console.error("Error loading search options:", error);
         }
@@ -55,12 +50,8 @@ export default function EmployeeSearch({
     function submitSearch(data: SearchForm) {
         onSearch({
             identityDocument: data.identityDocument || undefined,
-            areaId: data.areaId
-                ? Number(data.areaId)
-                : undefined,
-            positionId: data.positionId
-                ? Number(data.positionId)
-                : undefined,
+            areaId: data.areaId ? Number(data.areaId) : undefined,
+            positionId: data.positionId ? Number(data.positionId) : undefined,
         });
     }
 
@@ -70,39 +61,81 @@ export default function EmployeeSearch({
     }
 
     return (
-        <form onSubmit={handleSubmit(submitSearch)}>
-            <input
-                placeholder="Cédula"
+        <Paper 
+            component="form" 
+            onSubmit={handleSubmit(submitSearch)}
+            elevation={2}
+            sx={{ 
+                p: 2, 
+                mb: 3, 
+                display: 'flex', 
+                gap: 2, 
+                alignItems: 'center', 
+                flexWrap: 'wrap',
+                borderRadius: 2
+            }}
+        >
+            <TextField
+                label="Cédula"
+                variant="outlined"
+                size="small"
+                sx={{ flexGrow: 1, minWidth: '200px' }}
                 {...register("identityDocument")}
             />
 
-            <select {...register("areaId")}>
-                <option value="">Todas las áreas</option>
-
+            <TextField
+                select
+                label="Área"
+                variant="outlined"
+                size="small"
+                defaultValue=""
+                sx={{ flexGrow: 1, minWidth: '200px' }}
+                {...register("areaId")}
+            >
+                <MenuItem value=""><em>Todas las áreas</em></MenuItem>
                 {areas.map((area) => (
-                    <option key={area.id} value={area.id}>
+                    <MenuItem key={area.id} value={area.id}>
                         {area.name}
-                    </option>
+                    </MenuItem>
                 ))}
-            </select>
+            </TextField>
 
-            <select {...register("positionId")}>
-                <option value="">Todos los cargos</option>
-
+            <TextField
+                select
+                label="Cargo"
+                variant="outlined"
+                size="small"
+                defaultValue=""
+                sx={{ flexGrow: 1, minWidth: '200px' }}
+                {...register("positionId")}
+            >
+                <MenuItem value=""><em>Todos los cargos</em></MenuItem>
                 {positions.map((position) => (
-                    <option key={position.id} value={position.id}>
+                    <MenuItem key={position.id} value={position.id}>
                         {position.name}
-                    </option>
+                    </MenuItem>
                 ))}
-            </select>
+            </TextField>
 
-            <button type="submit">
-                Buscar
-            </button>
-
-            <button type="button" onClick={clearSearch}>
-                Limpiar
-            </button>
-        </form>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button 
+                    type="submit" 
+                    variant="contained" 
+                    color="primary"
+                    startIcon={<SearchIcon />}
+                >
+                    Buscar
+                </Button>
+                <Button 
+                    type="button" 
+                    variant="outlined" 
+                    color="secondary"
+                    onClick={clearSearch}
+                    startIcon={<ClearIcon />}
+                >
+                    Limpiar
+                </Button>
+            </Box>
+        </Paper>
     );
 }
