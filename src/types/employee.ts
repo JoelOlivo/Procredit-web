@@ -5,7 +5,9 @@ export interface Employee {
     lastNames: string;
     age: number;
     monthlySalary: number;
+    areaId: number;
     area: string;
+    positionId: number;
     position: string;
 }
 

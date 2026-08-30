@@ -1,6 +1,11 @@
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+
 import { updateEmployee } from "../api/employeeApi";
+import { getPositions } from "../api/positionApi";
+
 import type { Employee, UpdateEmployeeRequest } from "../types/employee";
+import type { Position } from "../types/position";
 
 interface EditEmployeeModalProps {
     employee: Employee;
@@ -8,16 +13,14 @@ interface EditEmployeeModalProps {
     onSuccess: () => void;
 }
 
-const positions = [
-    { id: 1, name: "Analista de Recursos Humanos" },
-    { id: 2, name: "Desarrollador de Software" },
-];
-
 export default function EditEmployeeModal({
     employee,
     onClose,
     onSuccess,
 }: EditEmployeeModalProps) {
+    const [positions, setPositions] = useState<Position[]>([]);
+    const [loadingPositions, setLoadingPositions] = useState(true);
+
     const {
         register,
         handleSubmit,
@@ -26,11 +29,27 @@ export default function EditEmployeeModal({
         defaultValues: {
             age: employee.age,
             monthlySalary: employee.monthlySalary,
-            positionId: positions.find(
-                (position) => position.name === employee.position
-            )?.id,
+            positionId: employee.positionId
         },
     });
+
+    useEffect(() => {
+        loadPositions();
+    }, []);
+
+    async function loadPositions() {
+        try {
+            const response = await getPositions();
+
+            if (response.success) {
+                setPositions(response.data);
+            }
+        } catch (error) {
+            console.error("Error loading positions:", error);
+        } finally {
+            setLoadingPositions(false);
+        }
+    }
 
     async function onSubmit(data: UpdateEmployeeRequest) {
         try {
@@ -45,6 +64,16 @@ export default function EditEmployeeModal({
         } catch (error) {
             console.error("Error updating employee:", error);
         }
+    }
+
+    if (loadingPositions) {
+        return (
+            <div className="modal-overlay">
+                <div className="modal">
+                    <p>Cargando información...</p>
+                </div>
+            </div>
+        );
     }
 
     return (

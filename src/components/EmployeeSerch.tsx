@@ -1,4 +1,11 @@
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+
+import { getAreas } from "../api/areaApi";
+import { getPositions } from "../api/positionApi";
+
+import type { Area } from "../types/area";
+import type { Position } from "../types/position";
 
 interface EmployeeSearchProps {
     onSearch: (params: {
@@ -7,16 +14,6 @@ interface EmployeeSearchProps {
         positionId?: number;
     }) => void;
 }
-
-const areas = [
-    { id: 1, name: "Recursos Humanos" },
-    { id: 2, name: "Tecnología" },
-];
-
-const positions = [
-    { id: 1, name: "Analista de Recursos Humanos" },
-    { id: 2, name: "Desarrollador de Software" },
-];
 
 interface SearchForm {
     identityDocument: string;
@@ -27,7 +24,33 @@ interface SearchForm {
 export default function EmployeeSearch({
     onSearch,
 }: EmployeeSearchProps) {
+    const [areas, setAreas] = useState<Area[]>([]);
+    const [positions, setPositions] = useState<Position[]>([]);
+
     const { register, handleSubmit, reset } = useForm<SearchForm>();
+
+    useEffect(() => {
+        loadOptions();
+    }, []);
+
+    async function loadOptions() {
+        try {
+            const [areasResponse, positionsResponse] = await Promise.all([
+                getAreas(),
+                getPositions(),
+            ]);
+
+            if (areasResponse.success) {
+                setAreas(areasResponse.data);
+            }
+
+            if (positionsResponse.success) {
+                setPositions(positionsResponse.data);
+            }
+        } catch (error) {
+            console.error("Error loading search options:", error);
+        }
+    }
 
     function submitSearch(data: SearchForm) {
         onSearch({
