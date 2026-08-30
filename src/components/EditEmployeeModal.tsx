@@ -1,3 +1,4 @@
+// EditEmployeeModal.tsx
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
@@ -10,6 +11,7 @@ import {
     MenuItem,
     Box,
     CircularProgress,
+    Alert,
 } from "@mui/material";
 
 import { updateEmployee } from "../api/employeeApi";
@@ -21,7 +23,7 @@ import type { Position } from "../types/position";
 interface EditEmployeeModalProps {
     employee: Employee;
     onClose: () => void;
-    onSuccess: () => void;
+    onSuccess: (message: string) => void;
 }
 
 export default function EditEmployeeModal({
@@ -31,6 +33,7 @@ export default function EditEmployeeModal({
 }: EditEmployeeModalProps) {
     const [positions, setPositions] = useState<Position[]>([]);
     const [loadingPositions, setLoadingPositions] = useState(true);
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
     const {
         register,
@@ -48,7 +51,7 @@ export default function EditEmployeeModal({
         loadPositions();
     }, []);
 
-    async function loadPositions() {
+    const loadPositions = async () => {
         try {
             const response = await getPositions();
             if (response.success) {
@@ -59,9 +62,11 @@ export default function EditEmployeeModal({
         } finally {
             setLoadingPositions(false);
         }
-    }
+    };
 
-    async function onSubmit(data: UpdateEmployeeRequest) {
+    const onSubmit = async (data: UpdateEmployeeRequest) => {
+        setSubmitError(null);
+
         try {
             const request = {
                 ...data,
@@ -69,11 +74,12 @@ export default function EditEmployeeModal({
             };
 
             await updateEmployee(employee.id, request);
-            onSuccess();
+            onSuccess("Empleado actualizado exitosamente");
         } catch (error) {
             console.error("Error updating employee:", error);
+            setSubmitError("No se pudo actualizar el empleado. Intenta de nuevo.");
         }
-    }
+    };
 
     return (
         <Dialog open={true} onClose={onClose} fullWidth maxWidth="sm">
@@ -88,7 +94,10 @@ export default function EditEmployeeModal({
             ) : (
                 <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
                     <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                        
+                        {submitError && (
+                            <Alert severity="error">{submitError}</Alert>
+                        )}
+
                         <TextField
                             label="Edad"
                             type="number"
@@ -142,10 +151,10 @@ export default function EditEmployeeModal({
                         <Button onClick={onClose} color="inherit" variant="text">
                             Cancelar
                         </Button>
-                        <Button 
-                            type="submit" 
-                            variant="contained" 
-                            color="primary" 
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            color="primary"
                             disabled={isSubmitting}
                         >
                             {isSubmitting ? "Guardando..." : "Guardar cambios"}

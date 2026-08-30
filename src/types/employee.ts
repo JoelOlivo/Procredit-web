@@ -1,3 +1,5 @@
+import type { ApiResponse } from "./api";
+
 export interface Employee {
     id: number;
     identityDocument: string;
@@ -11,12 +13,7 @@ export interface Employee {
     position: string;
 }
 
-export interface EmployeeResponse {
-    success: boolean;
-    code: number;
-    message: string;
-    data: Employee[];
-}
+export type EmployeeResponse = ApiResponse<Employee[]>;
 
 export interface CreateEmployeeRequest {
     identityDocument: string;

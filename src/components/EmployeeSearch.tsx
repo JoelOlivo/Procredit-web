@@ -8,13 +8,10 @@ import { getPositions } from "../api/positionApi";
 
 import type { Area } from "../types/area";
 import type { Position } from "../types/position";
+import type { EmployeeSearchParams } from "../types/employee";
 
 interface EmployeeSearchProps {
-    onSearch: (params: {
-        identityDocument?: string;
-        areaId?: number;
-        positionId?: number;
-    }) => void;
+    onSearch: (params: EmployeeSearchParams) => void;
 }
 
 interface SearchForm {
@@ -33,7 +30,7 @@ export default function EmployeeSearch({ onSearch }: EmployeeSearchProps) {
         loadOptions();
     }, []);
 
-    async function loadOptions() {
+    const loadOptions = async () => {
         try {
             const [areasResponse, positionsResponse] = await Promise.all([
                 getAreas(),
@@ -45,32 +42,32 @@ export default function EmployeeSearch({ onSearch }: EmployeeSearchProps) {
         } catch (error) {
             console.error("Error loading search options:", error);
         }
-    }
+    };
 
-    function submitSearch(data: SearchForm) {
+    const submitSearch = (data: SearchForm) => {
         onSearch({
             identityDocument: data.identityDocument || undefined,
             areaId: data.areaId ? Number(data.areaId) : undefined,
             positionId: data.positionId ? Number(data.positionId) : undefined,
         });
-    }
+    };
 
-    function clearSearch() {
+    const clearSearch = () => {
         reset();
         onSearch({});
-    }
+    };
 
     return (
-        <Paper 
-            component="form" 
+        <Paper
+            component="form"
             onSubmit={handleSubmit(submitSearch)}
             elevation={2}
-            sx={{ 
-                p: 2, 
-                mb: 3, 
-                display: 'flex', 
-                gap: 2, 
-                alignItems: 'center', 
+            sx={{
+                p: 2,
+                mb: 3,
+                display: 'flex',
+                gap: 2,
+                alignItems: 'center',
                 flexWrap: 'wrap',
                 borderRadius: 2
             }}
@@ -118,17 +115,17 @@ export default function EmployeeSearch({ onSearch }: EmployeeSearchProps) {
             </TextField>
 
             <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button 
-                    type="submit" 
-                    variant="contained" 
+                <Button
+                    type="submit"
+                    variant="contained"
                     color="primary"
                     startIcon={<SearchIcon />}
                 >
                     Buscar
                 </Button>
-                <Button 
-                    type="button" 
-                    variant="outlined" 
+                <Button
+                    type="button"
+                    variant="outlined"
                     color="secondary"
                     onClick={clearSearch}
                     startIcon={<ClearIcon />}

@@ -1,15 +1,11 @@
-import axios from "axios";
-import type { ApiResponse, LoginRequest } from "../types/auth";
-
-const API_URL = "https://localhost:7110/api";
+import api from "../services/apiService";
+import { saveToken } from "../services/authService";
+import type { AuthRequest, AuthResponse } from "../types/auth";
 
 export const login = async (
-    credentials: LoginRequest
-) : Promise<ApiResponse<string>> => {
-    const response = await axios.post<ApiResponse<string>>(
-        `${API_URL}/auth`,
-        credentials
-    );
-
+    credentials: AuthRequest
+): Promise<AuthResponse> => {
+    const response = await api.post<AuthResponse>("/auth", credentials);
+    saveToken(response.data.data)
     return response.data;
-}
+};

@@ -1,11 +1,8 @@
-export interface LoginRequest {
-    UserName: string;
-    Password: string;
+import type { ApiResponse } from "./api";
+
+export interface AuthRequest {
+    userName: string;
+    password: string;
 }
 
-export interface ApiResponse<T> {
-    success: boolean;
-    code: number;
-    message: string;
-    data: T;
-}
+export type AuthResponse = ApiResponse<string>;

@@ -10,6 +10,7 @@ import {
     MenuItem,
     Box,
     CircularProgress,
+    Alert
 } from "@mui/material";
 
 import { createEmployee } from "../api/employeeApi";
@@ -22,13 +23,14 @@ import type { Position } from "../types/position";
 
 interface AddEmployeeModalProps {
     onClose: () => void;
-    onSuccess: () => void;
+    onSuccess: (message: string) => void;
 }
 
 export default function AddEmployeeModal({ onClose, onSuccess }: AddEmployeeModalProps) {
     const [areas, setAreas] = useState<Area[]>([]);
     const [positions, setPositions] = useState<Position[]>([]);
     const [loadingOptions, setLoadingOptions] = useState(true);
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
     const {
         register,
@@ -41,7 +43,7 @@ export default function AddEmployeeModal({ onClose, onSuccess }: AddEmployeeModa
         loadOptions();
     }, []);
 
-    async function loadOptions() {
+    const loadOptions = async () => {
         try {
             const [areasResponse, positionsResponse] = await Promise.all([
                 getAreas(),
@@ -57,7 +59,9 @@ export default function AddEmployeeModal({ onClose, onSuccess }: AddEmployeeModa
         }
     }
 
-    async function onSubmit(data: CreateEmployeeRequest) {
+    const onSubmit = async (data: CreateEmployeeRequest) => {
+        setSubmitError(null);
+
         try {
             const employee = {
                 ...data,
@@ -66,9 +70,10 @@ export default function AddEmployeeModal({ onClose, onSuccess }: AddEmployeeModa
 
             await createEmployee(employee);
             reset();
-            onSuccess();
+            onSuccess("Empleado creado exitosamente");
         } catch (error) {
             console.error("Error creating employee:", error);
+            setSubmitError("No se pudo crear el empleado. Intenta de nuevo.");
         }
     }
 
@@ -85,6 +90,9 @@ export default function AddEmployeeModal({ onClose, onSuccess }: AddEmployeeModa
             ) : (
                 <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
                     <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {submitError && (
+                            <Alert severity="error">{submitError}</Alert>
+                        )}
                         <TextField
                             label="Cédula"
                             fullWidth

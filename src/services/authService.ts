@@ -12,6 +12,29 @@ export const removeToken = (): void => {
     localStorage.removeItem(TOKEN_KEY);
 }
 
+export const isTokenExpired = (token: string): boolean => {
+    try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        if (!payload.exp) return false;
+        return payload.exp * 1000 < Date.now();
+    } catch {
+        return true;
+    }
+};
+
 export const isAuthenticated = (): boolean => {
-    return getToken() !== null;
+    const token = getToken();
+    if (!token) return false;
+
+    if (isTokenExpired(token)) {
+        removeToken();
+        return false;
+    }
+
+    return true;
 }
+
+export const logout = (): void => {
+    removeToken();
+    window.location.href = "/login";
+};

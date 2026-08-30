@@ -1,43 +1,48 @@
 import { useEffect, useState } from "react";
-import { 
-  Container, 
-  Box, 
-  Typography, 
-  Button, 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
-  TableRow, 
-  Paper, 
+import {
+  Container,
+  Box,
+  Typography,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
   CircularProgress,
   IconButton,
-  Tooltip
+  Tooltip,
+  Snackbar,
+  Alert
 } from "@mui/material";
-import { 
-  Add as AddIcon, 
-  Edit as EditIcon, 
-  Delete as DeleteIcon 
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon
 } from "@mui/icons-material";
 
 import { getEmployees, deleteEmployee, searchEmployees } from "../api/employeeApi";
-import type { Employee } from "../types/employee";
+import type { Employee, EmployeeSearchParams } from "../types/employee";
 import AddEmployeeModal from "../components/AddEmployeeModal";
 import EditEmployeeModal from "../components/EditEmployeeModal";
-import EmployeeSearch from "../components/EmployeeSerch"; // Mantenemos tu import original
+import EmployeeSearch from "../components/EmployeeSearch";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 export default function EmployeesPage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
 
     useEffect(() => {
         loadEmployees();
     }, []);
 
-    async function loadEmployees() {
+    const loadEmployees = async () => {
         try {
             setLoading(true);
             const response = await getEmployees();
@@ -49,25 +54,23 @@ export default function EmployeesPage() {
         } finally {
             setLoading(false);
         }
-    }
+    };
 
-    async function handleDeleteEmployee(id: number) {
-        const confirmed = window.confirm("¿Está seguro de eliminar este empleado?");
-        if (!confirmed) return;
+    const confirmDeleteEmployee = async () => {
+        if (!employeeToDelete) return;
 
         try {
-            await deleteEmployee(id);
+            await deleteEmployee(employeeToDelete.id);
+            setSuccessMessage("Empleado eliminado exitosamente");
             await loadEmployees();
         } catch (error) {
             console.error("Error deleting employee:", error);
+        } finally {
+            setEmployeeToDelete(null);
         }
-    }
+    };
 
-    async function handleSearch(params: {
-        identityDocument?: string;
-        areaId?: number;
-        positionId?: number;
-    }) {
+    const handleSearch = async (params: EmployeeSearchParams) => {
         try {
             setLoading(true);
             const response = await searchEmployees(params);
@@ -79,22 +82,29 @@ export default function EmployeesPage() {
         } finally {
             setLoading(false);
         }
-    }
+    };
+
+    const handleAddSuccess = (message: string) => {
+        setShowAddModal(false);
+        setSuccessMessage(message);
+        loadEmployees();
+    };
+
+    const handleEditSuccess = (message: string) => {
+        setSelectedEmployee(null);
+        setSuccessMessage(message);
+        loadEmployees();
+    };
 
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
-            {/* Encabezado */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography 
-                    variant="h4" 
-                    component="h1" 
-                    color="primary"
-                >
+                <Typography variant="h4" component="h1" color="primary">
                     Empleados
                 </Typography>
-                <Button 
-                    variant="contained" 
-                    color="primary" 
+                <Button
+                    variant="contained"
+                    color="primary"
                     startIcon={<AddIcon />}
                     onClick={() => setShowAddModal(true)}
                 >
@@ -102,12 +112,10 @@ export default function EmployeesPage() {
                 </Button>
             </Box>
 
-            {/* Buscador */}
             <Box sx={{ mb: 4 }}>
                 <EmployeeSearch onSearch={handleSearch} />
             </Box>
 
-            {/* Tabla / Loading */}
             {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
                     <CircularProgress />
@@ -129,7 +137,7 @@ export default function EmployeesPage() {
                         <TableBody>
                             {employees.length > 0 ? (
                                 employees.map((employee) => (
-                                    <TableRow 
+                                    <TableRow
                                         key={employee.id}
                                         sx={{ '&:last-child td, &:last-child th': { border: 0 }, '&:hover': { backgroundColor: 'action.hover' } }}
                                     >
@@ -143,17 +151,17 @@ export default function EmployeesPage() {
                                         <TableCell>{employee.position}</TableCell>
                                         <TableCell align="center">
                                             <Tooltip title="Editar">
-                                                <IconButton 
-                                                    color="primary" 
+                                                <IconButton
+                                                    color="primary"
                                                     onClick={() => setSelectedEmployee(employee)}
                                                 >
                                                     <EditIcon />
                                                 </IconButton>
                                             </Tooltip>
                                             <Tooltip title="Eliminar">
-                                                <IconButton 
-                                                    color="error" 
-                                                    onClick={() => handleDeleteEmployee(employee.id)}
+                                                <IconButton
+                                                    color="error"
+                                                    onClick={() => setEmployeeToDelete(employee)}
                                                 >
                                                     <DeleteIcon />
                                                 </IconButton>
@@ -175,14 +183,10 @@ export default function EmployeesPage() {
                 </TableContainer>
             )}
 
-            {/* Modales */}
             {showAddModal && (
                 <AddEmployeeModal
                     onClose={() => setShowAddModal(false)}
-                    onSuccess={() => {
-                        setShowAddModal(false);
-                        loadEmployees();
-                    }}
+                    onSuccess={handleAddSuccess}
                 />
             )}
 
@@ -190,12 +194,32 @@ export default function EmployeesPage() {
                 <EditEmployeeModal
                     employee={selectedEmployee}
                     onClose={() => setSelectedEmployee(null)}
-                    onSuccess={() => {
-                        setSelectedEmployee(null);
-                        loadEmployees();
-                    }}
+                    onSuccess={handleEditSuccess}
                 />
             )}
+
+            <Snackbar
+                open={!!successMessage}
+                autoHideDuration={3000}
+                onClose={() => setSuccessMessage(null)}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+            >
+                <Alert severity="success" sx={{ width: "100%" }}>
+                    {successMessage}
+                </Alert>
+            </Snackbar>
+
+            <ConfirmDialog
+                open={!!employeeToDelete}
+                title="Eliminar empleado"
+                message={
+                    employeeToDelete
+                        ? `¿Está seguro de eliminar a ${employeeToDelete.firstNames} ${employeeToDelete.lastNames}?`
+                        : ""
+                }
+                onConfirm={confirmDeleteEmployee}
+                onCancel={() => setEmployeeToDelete(null)}
+            />
         </Container>
     );
 }
